@@ -78,11 +78,7 @@ export default class ActivityController {
       // logger.info('number of activities', activities.length);
       const savedActivities = await activityRepository.saveBulk(activities);
 
-      // TODO:: Discentralize (un-tie) by emitting as an event
-      // Pass savedActivites to token controller
-
-      // const tokenController = new TokenController();
-      // tokenController.extractTokens(savedActivities);
+      // Emit newActivity event
       eventEmitter.emit("newActivity", savedActivities.map((activity) => activity.toJSON()));
 
       logger.info('New activity created!');

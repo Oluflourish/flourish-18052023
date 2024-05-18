@@ -7,15 +7,14 @@ import logger from "../logger";
 export default class TokenController {
 
   async extractTokens(activites: Activity[]) {
-    const activityRepository = 
-    new ActivityController();
+    const activityRepository =
+      new ActivityController();
 
     try {
       // Check if the activity with token_index exists in the tokens table  and if it doesn't, create it.
       const existingTokens: Token[] = [];
       const newTokens: Token[] = [];
 
-      // TODO: combine into one list and use upInsert
       const tokenQuery = activites.map((activity) => {
         return { index: activity.token_index, contract_address: activity.contract_address };
       });
@@ -63,7 +62,7 @@ export default class TokenController {
 
             if (foundActivities.length === 0) {
               token.current_price = null;
-              //TODO: Push into array and use upInset to avoid duplicate entries
+              
               existingTokens.push(token);
             } else {
               // Check if the listing has a value lower than any other listing for the same NFT (identified by the combination of contract address and token index).
@@ -89,6 +88,7 @@ export default class TokenController {
 
       // Batch create new tokens
       this.createBulkToken(newTokens);
+      
       // Batch update existing tokens
       this.updateBulkToken(existingTokens);
 
