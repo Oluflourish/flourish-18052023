@@ -23,31 +23,31 @@ export default class Activity extends Model {
     type: DataType.STRING(255),
     field: "contract_address"
   })
-  contract_address?: string;
+  contract_address!: string;
 
   @Column({
     type: DataType.STRING(255),
     field: "token_index"
   })
-  token_index?: number;
+  token_index!: number;
 
   @Column({
     type: DataType.FLOAT,
     field: "listing_price"
   })
-  listing_price?: number;
+  listing_price!: number;
 
   @Column({
     type: DataType.STRING(255),
     field: "maker"
   })
-  maker?: string;
+  maker!: string;
 
   @Column({
     type: DataType.INTEGER,
     field: "listing_from"
   })
-  listing_from?: number;
+  listing_from!: number;
 
 
   @Column({
@@ -60,6 +60,6 @@ export default class Activity extends Model {
     type: DataType.DATE,
     field: "event_timestamp"
   })
-  event_timestamp?: Date;
+  event_timestamp!: Date;
 
 }

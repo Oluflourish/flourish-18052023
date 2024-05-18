@@ -3,22 +3,59 @@ import activityRepository from "../repositories/activity.repository";
 import axios from "axios";
 import TokenController from "./token.controller";
 import logger from "../logger";
+import { eventEmitter } from "../emitter";
+import e from "express";
 
 export default class ActivityController {
 
   async fetchEvents() {
     try {
-      // const response = await axios.get("https://api.reservoir.tools/events/asks/v3?limit=1000");
-      const response = await axios.get("https://api.reservoir.tools/events/asks/v3?limit=3"); // [FOR TESTING PURPOSE]
+      const limit = 1000;
+      // const limit = 3;
+      const endTimestamp = Math.floor(new Date().getTime() / 1000);
+      const startTimestamp = endTimestamp - 60;
+      let continuation = null;
+      let shouldContinue = true;
 
-      logger.info(response.data);
 
-      this.createBulkActivity(response.data.events);
+      const url = `https://api.reservoir.tools/events/asks/v3?limit=${limit}&startTimestamp=${startTimestamp}&endTimestamp=${endTimestamp}`;
+
+
+      const eventsResponseBatch = [];
+
+      while (shouldContinue) {
+        const response = await this.fetchApiData(url, continuation);
+        eventsResponseBatch.push(response.events);
+
+        if (response.continuation == null) {
+          shouldContinue = false;
+        } else {
+          continuation = response.continuation;
+        }
+      }
+
+      this.createBulkActivity(eventsResponseBatch.flat());
+
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async fetchApiData(url: string, continuation?: string,) {
+    try {
+      if (continuation) {
+        url = `${url}&continuation=${continuation}`;
+      }
+
+      const response = await axios.get(url);
+
       return response.data;
     } catch (error) {
       console.error(error);
     }
   }
+
+
 
   async createBulkActivity(data: any) {
     try {
@@ -44,8 +81,9 @@ export default class ActivityController {
       // TODO:: Discentralize (un-tie) by emitting as an event
       // Pass savedActivites to token controller
 
-      const tokenController = new TokenController();
-      tokenController.extractTokens(savedActivities);
+      // const tokenController = new TokenController();
+      // tokenController.extractTokens(savedActivities);
+      eventEmitter.emit("newActivity", savedActivities.map((activity) => activity.toJSON()));
 
       logger.info('New activity created!');
     } catch (err) {

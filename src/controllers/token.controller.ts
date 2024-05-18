@@ -7,68 +7,90 @@ import logger from "../logger";
 export default class TokenController {
 
   async extractTokens(activites: Activity[]) {
-    const activityRepository = new ActivityController();
+    const activityRepository = 
+    new ActivityController();
 
     try {
       // Check if the activity with token_index exists in the tokens table  and if it doesn't, create it.
-      let newTokens: Token[] = [];
+      const existingTokens: Token[] = [];
+      const newTokens: Token[] = [];
+
+      // TODO: combine into one list and use upInsert
+      const tokenQuery = activites.map((activity) => {
+        return { index: activity.token_index, contract_address: activity.contract_address };
+      });
+
+      const tokens = await tokenRepository.retrieveAll(tokenQuery);
+
+      const tokenStore = new Map<string, Token>();
+      tokens.forEach(token => {
+        const tokenKey = `${token.contract_address}-${token.index}`;
+        tokenStore.set(tokenKey, token);
+      });
 
       for (let i = 0; i < activites.length; i++) {
         const activity: Activity = activites[i];
-        let token = await tokenRepository.retrieveOne({ index: activity.token_index });
+        const tokenKey = `${activity.contract_address}-${activity.token_index}`;
+        const token = tokenStore.get(tokenKey);
+        const now = Math.floor(new Date().getTime() / 1000);
 
         if (!token) {
+
+          let current_price = null;
+          if (activity.listing_to != null && activity.listing_to > now) {
+            current_price = activity.listing_price;
+          }
           // If token does not exist, create it
           const newToken: Token = new Token({
             index: activity.token_index,
             contract_address: activity.contract_address,
-            current_price: activity.listing_price
+            current_price,
           });
 
           newTokens.push(newToken);
 
         } else {
           // For any token that their listing has expired (order.validTo < now), and there are no other active listings, their current price must be set to null.
-          const now = new Date().getTime();
 
-          if (activity.listing_to != null && activity.listing_to < now) {
+
+          if ((activity.listing_to != null && activity.listing_to < now) || (token.listing_to != null && token.listing_to < now)) {
             // let foundActivities: Activity[] = await activityRepository.findAll({ token_index: activity.token_index}) ?? [];
-            let foundActivities: Activity[] = await activityRepository.findAll({
+            const foundActivities: Activity[] = await activityRepository.findAll({
               token_index: activity.token_index,
               contract_adresss: activity.contract_address,
               listing_to: { $gt: now } // Ensure that listing has not expired
             }) ?? [];
 
             if (foundActivities.length === 0) {
-              token.current_price = undefined;
-              await tokenRepository.update(token);
+              token.current_price = null;
+              //TODO: Push into array and use upInset to avoid duplicate entries
+              existingTokens.push(token);
             } else {
               // Check if the listing has a value lower than any other listing for the same NFT (identified by the combination of contract address and token index).
               // The lowest valid listing must be set as the current price for that NFT in the tokens table.
 
-              let lowestPrice: number = activity.listing_price ?? 0;
+              const lowestPrice: number = Math.min(...foundActivities.map(activity => activity.listing_price));
 
-              // TODO:: Optimize this by using a query to get the lowest price
-              for (let j = 0; j < foundActivities.length; j++) {
-                let listPrice = foundActivities[j].listing_price ?? 0;
-                if (listPrice < lowestPrice) {
-                  lowestPrice = listPrice;
-                }
+              if (token.current_price != lowestPrice) {
+                token.current_price = lowestPrice;
+                existingTokens.push(token);
               }
-
-              token.current_price = lowestPrice;
-              await tokenRepository.update(token);
             }
           } else {
             // If the token exists and the listing is still active, the current price must be updated to the most recent listing price.
-            token.current_price = activity.listing_price;
-            await tokenRepository.update(token);
+            if (!token.current_price || token.current_price > activity.listing_price) {
+              token.current_price = activity.listing_price;
+              existingTokens.push(token);
+            }
           }
         }
       }
 
+
       // Batch create new tokens
       this.createBulkToken(newTokens);
+      // Batch update existing tokens
+      this.updateBulkToken(existingTokens);
 
     } catch (error) {
       console.error(error);
@@ -77,7 +99,7 @@ export default class TokenController {
 
   async createBulkToken(tokens: Token[]) {
     try {
-      const savedToken = await tokenRepository.saveBulk(tokens);
+      await tokenRepository.saveBulk(tokens);
 
       logger.info('New tokens created:', tokens.length);
     } catch (err) {
@@ -85,9 +107,19 @@ export default class TokenController {
     }
   }
 
+  async updateBulkToken(tokens: Token[]) {
+    try {
+      await tokenRepository.bulkUpdate(tokens);
+
+      logger.info('Tokens updated:', tokens.length);
+    } catch (err) {
+      logger.error('Error updating token', err);
+    }
+  }
+
   async create(token: Token) {
     try {
-      const savedToken = await tokenRepository.save(token);
+      await tokenRepository.save(token);
 
       logger.info('Token created successfully');
     } catch (err) {

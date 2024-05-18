@@ -1,9 +1,11 @@
 import { Op } from "sequelize";
 import Token from "../models/token.model";
+import { log } from "console";
+import logger from "../logger";
 
 interface ITokenRepository {
   save(token: Token): Promise<Token>;
-  retrieveAll(searchParams: { title: string, published: boolean }): Promise<Token[]>;
+  retrieveAll(condition: { index: number; contract_address: string }[]): Promise<Token[]>;
   retrieveById(tokenId: number): Promise<Token | null>;
   update(token: Token): Promise<number>;
   delete(tokenId: number): Promise<number>;
@@ -20,7 +22,8 @@ class TokenRepository implements ITokenRepository {
       return await Token.create({
         index: token.index,
         contract_address: token.contract_address,
-        current_price: token.current_price
+        current_price: token.current_price,
+        listing_to: token.listing_to
       });
     } catch (err) {
       throw new Error("Failed to create Token!");
@@ -28,28 +31,43 @@ class TokenRepository implements ITokenRepository {
   }
 
   // insert multiple records of activities
-  async saveBulk(activities: Token[]): Promise<Token[]> {
+  async saveBulk(tokens: Token[]): Promise<Token[]> {
     try {
-      return await Token.bulkCreate(activities.map((token) => ({
+      return await Token.bulkCreate(tokens.map((token) => ({
         index: token.index,
         contract_address: token.contract_address,
-        current_price: token.current_price
+        current_price: token.current_price,
+        listing_to: token.listing_to
       })));
     } catch (err) {
       throw new Error("Failed to create Token!");
     }
   }
 
-  async retrieveAll(searchParams: { title?: string, published?: boolean }): Promise<Token[]> {
+  // bulk update  tokens: Token[] using update() method
+  async bulkUpdate(tokens: Token[]): Promise<Token[]> {
     try {
-      let condition: SearchCondition = {};
+      return await Token.bulkCreate(tokens.map((token) => ({
+        index: token.index,
+        contract_address: token.contract_address,
+        current_price: token.current_price,
+        listing_to: token.listing_to
+      })), { updateOnDuplicate: ['index', 'contract_address'] });
+    } catch (err) {
+      throw new Error("Failed to create Token!");
+    }
+  }
 
-      if (searchParams?.published) condition.published = true;
 
-      if (searchParams?.title) condition.title = { [Op.like]: `%${searchParams.title}%` };
 
-      return await Token.findAll({ where: condition });
+  async retrieveAll(condition: { index: number; contract_address: string }[]): Promise<Token[]> {
+    try {
+      const res = await Token.findAll({ where: { [Op.or]: condition } });
+
+
+      return res;
     } catch (error) {
+      logger.error('Error retrieving tokens', error);
       throw new Error("Failed to retrieve Tokens!");
     }
   }
@@ -57,8 +75,9 @@ class TokenRepository implements ITokenRepository {
   async retrieveById(tokenId: number): Promise<Token | null> {
     try {
       return await Token.findByPk(tokenId);
-    } catch (error) {
-      throw new Error("Failed to retrieve Tokens!");
+    } catch (error: any) {
+      logger.error('Error retrieving token', error.message);
+      throw new Error("Failed to retrieve Token");
     }
   }
 
@@ -71,11 +90,11 @@ class TokenRepository implements ITokenRepository {
   }
 
   async update(token: Token): Promise<number> {
-    const { id, index, contract_address, current_price } = token;
+    const { id, index, contract_address, current_price, listing_to } = token;
 
     try {
       const affectedRows = await Token.update(
-        { index, contract_address, current_price },
+        { index, contract_address, current_price, listing_to },
         { where: { id: id } }
       );
 

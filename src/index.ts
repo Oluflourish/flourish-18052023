@@ -4,6 +4,8 @@ import Database from "./db";
 import ActivityController from "./controllers/activity.controller";
 import cron from 'node-cron';
 import logger from "./logger";
+import TokenController from "./controllers/token.controller";
+import { eventEmitter } from "./emitter";
 
 export default class Server {
   constructor(app: Application) {
@@ -21,11 +23,16 @@ export default class Server {
     app.use(express.urlencoded({ extended: true }));
 
     // cron.schedule('*/30 * * * *', () => {                // Runs every 30 minutes
-    cron.schedule('*/5 * * * * *', () => {          // Runs every 5 seconds  // [FOR TESTING PURPOSE]
+    cron.schedule('* * * * *', () => {                  // Runs every 1 minute
       logger.info('Cron Job is running');
 
       const controller = new ActivityController();
       controller.fetchEvents();
+    });
+
+    eventEmitter.on('newActivity', (data) => {
+      const tokenController = new TokenController();
+      tokenController.extractTokens(data);
     });
   }
 

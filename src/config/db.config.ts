@@ -3,6 +3,7 @@ export const config = {
   USER: "root",
   PASSWORD: "password",
   DB: "nft-db",
+  logging: false,
   pool: {
     max: 5,
     min: 0,
