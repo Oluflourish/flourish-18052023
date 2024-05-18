@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize-typescript";
 import { config, dialect } from "../config/db.config";
 import Activity from "../models/activity.model";
 import Token from "../models/token.model";
+import logger from "../logger";
 
 class Database {
   public sequelize: Sequelize | undefined;
@@ -29,7 +30,7 @@ class Database {
     await this.sequelize
       .authenticate()
       .then(() => {
-        console.log("Connection has been established successfully.");
+        logger.info("Connection has been established successfully.");
       })
       .catch((err) => {
         console.error("Unable to connect to the Database:", err);

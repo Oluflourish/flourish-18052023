@@ -2,6 +2,7 @@ import Token from "../models/token.model";
 import tokenRepository from "../repositories/token.repository";
 import Activity from "../models/activity.model";
 import ActivityController from "./activity.controller";
+import logger from "../logger";
 
 export default class TokenController {
 
@@ -32,7 +33,11 @@ export default class TokenController {
 
           if (activity.listing_to != null && activity.listing_to < now) {
             // let foundActivities: Activity[] = await activityRepository.findAll({ token_index: activity.token_index}) ?? [];
-            let foundActivities: Activity[] = await activityRepository.findAll({ token_index: activity.token_index, contract_adresss: activity.contract_address }) ?? [];
+            let foundActivities: Activity[] = await activityRepository.findAll({
+              token_index: activity.token_index,
+              contract_adresss: activity.contract_address,
+              listing_to: { $gt: now } // Ensure that listing has not expired
+            }) ?? [];
 
             if (foundActivities.length === 0) {
               token.current_price = undefined;
@@ -43,6 +48,7 @@ export default class TokenController {
 
               let lowestPrice: number = activity.listing_price ?? 0;
 
+              // TODO:: Optimize this by using a query to get the lowest price
               for (let j = 0; j < foundActivities.length; j++) {
                 let listPrice = foundActivities[j].listing_price ?? 0;
                 if (listPrice < lowestPrice) {
@@ -73,9 +79,9 @@ export default class TokenController {
     try {
       const savedToken = await tokenRepository.saveBulk(tokens);
 
-      console.log('New tokens created:', tokens.length);
+      logger.info('New tokens created:', tokens.length);
     } catch (err) {
-      console.error('Error creating token', err);
+      logger.error('Error creating token', err);
     }
   }
 
@@ -83,9 +89,9 @@ export default class TokenController {
     try {
       const savedToken = await tokenRepository.save(token);
 
-      console.log('Token created successfully');
+      logger.info('Token created successfully');
     } catch (err) {
-      console.error('Error creating token', err);
+      logger.error('Error creating token', err);
     }
   }
 
@@ -95,7 +101,7 @@ export default class TokenController {
 
       return tokens;
     } catch (err) {
-      console.log('Error retrieving tokens', err);
+      logger.error('Error retrieving tokens', err);
     }
   }
 
@@ -107,7 +113,7 @@ export default class TokenController {
       if (token) {
         return token;
       } else {
-        console.log(`Cannot find Token with id=${id}.`);
+        logger.info(`Cannot find Token with id=${id}.`);
       }
     } catch (err) {
       console.error(`Error retrieving Token with id=${id}.`);
@@ -120,10 +126,10 @@ export default class TokenController {
       const num = await tokenRepository.update(token);
 
       if (num == 1) {
-        console.log('Token updated successfully');
+        logger.info('Token updated successfully');
 
       } else {
-        console.log(`Cannot update Token with id=${token.id}. Maybe Token was not found or req.body is empty!`);
+        logger.info(`Cannot update Token with id=${token.id}. Maybe Token was not found or req.body is empty!`);
       }
     } catch (err) {
       console.error(`Error updating Token with id=${token.id}.`);
@@ -136,9 +142,9 @@ export default class TokenController {
       const num = await tokenRepository.delete(id);
 
       if (num == 1) {
-        console.log('Token deleted successfully');
+        logger.info('Token deleted successfully');
       } else {
-        console.log(`Cannot delete Token with id=${id}. Maybe Token was not found!`);
+        logger.info(`Cannot delete Token with id=${id}. Maybe Token was not found!`);
       }
     } catch (err) {
       console.error(`Error deleting Token with id=${id}.`);
@@ -149,9 +155,9 @@ export default class TokenController {
     try {
       const num = await tokenRepository.deleteAll();
 
-      console.log(`${num} Tokens were deleted successfully!`);
+      logger.info(`${num} Tokens were deleted successfully!`);
     } catch (err) {
-      console.error('Error deleting Tokens');
+      logger.error('Error deleting Tokens');
     }
   }
 }

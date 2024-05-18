@@ -3,6 +3,7 @@ import cors, { CorsOptions } from "cors";
 import Database from "./db";
 import ActivityController from "./controllers/activity.controller";
 import cron from 'node-cron';
+import logger from "./logger";
 
 export default class Server {
   constructor(app: Application) {
@@ -20,8 +21,8 @@ export default class Server {
     app.use(express.urlencoded({ extended: true }));
 
     // cron.schedule('*/30 * * * *', () => {                // Runs every 30 minutes
-    cron.schedule('*/5 * * * * *', () => {                // Runs every 5 seconds
-      console.log('Cron Job is running');
+    cron.schedule('*/5 * * * * *', () => {          // Runs every 5 seconds  // [FOR TESTING PURPOSE]
+      logger.info('Cron Job is running');
 
       const controller = new ActivityController();
       controller.fetchEvents();

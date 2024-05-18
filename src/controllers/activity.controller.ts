@@ -2,15 +2,16 @@ import Activity from "../models/activity.model";
 import activityRepository from "../repositories/activity.repository";
 import axios from "axios";
 import TokenController from "./token.controller";
+import logger from "../logger";
 
 export default class ActivityController {
 
   async fetchEvents() {
     try {
       // const response = await axios.get("https://api.reservoir.tools/events/asks/v3?limit=1000");
-      const response = await axios.get("https://api.reservoir.tools/events/asks/v3?limit=3");
+      const response = await axios.get("https://api.reservoir.tools/events/asks/v3?limit=3"); // [FOR TESTING PURPOSE]
 
-      console.log(response.data);
+      logger.info(response.data);
 
       this.createBulkActivity(response.data.events);
       return response.data;
@@ -37,7 +38,7 @@ export default class ActivityController {
         });
       });
 
-      // console.log('number of activities', activities.length);
+      // logger.info('number of activities', activities.length);
       const savedActivities = await activityRepository.saveBulk(activities);
 
       // TODO:: Discentralize (un-tie) by emitting as an event
@@ -46,9 +47,9 @@ export default class ActivityController {
       const tokenController = new TokenController();
       tokenController.extractTokens(savedActivities);
 
-      console.log('New activity created!');
+      logger.info('New activity created!');
     } catch (err) {
-      console.error('Error creating activity', err);
+      logger.error('Error creating activity', err);
     }
   }
 
@@ -57,9 +58,9 @@ export default class ActivityController {
     try {
       const savedActivity = await activityRepository.save(activity);
 
-      console.log('Activity created successfully');
+      logger.info('Activity created successfully');
     } catch (err) {
-      console.error('Error creating activity', err);
+      logger.error('Error creating activity', err);
     }
   }
 
@@ -80,10 +81,10 @@ export default class ActivityController {
       if (activity) {
         return activity;
       } else {
-        console.log('Cannot find Activity with id=${id}.');
+        logger.info('Cannot find Activity with id=${id}.');
       }
     } catch (err) {
-      console.log('Error retrieving Activity with id=${id}.');
+      logger.error('Error retrieving Activity with id=${id}.');
     }
   }
 
@@ -92,12 +93,12 @@ export default class ActivityController {
       const num = await activityRepository.update(activity);
 
       if (num == 1) {
-        console.log('Activity updated successfully');
+        logger.info('Activity updated successfully');
       } else {
-        console.log('Cannot update Activity with id=${activity.id}. Maybe Activity was not found or req.body is empty!');
+        logger.info('Cannot update Activity with id=${activity.id}. Maybe Activity was not found or req.body is empty!');
       }
     } catch (err) {
-      console.error('Error updating Activity with id=${activity.id}.');
+      logger.error('Error updating Activity with id=${activity.id}.');
     }
   }
 
@@ -105,12 +106,12 @@ export default class ActivityController {
     try {
       const num = await activityRepository.delete(id);
       if (num == 1) {
-        console.log('Activity was deleted successfully!');
+        logger.info('Activity was deleted successfully!');
       } else {
-        console.log('Cannot delete Activity with id=${id}. Maybe Activity was not found!');
+        logger.info('Cannot delete Activity with id=${id}. Maybe Activity was not found!');
       }
     } catch (err) {
-      console.error('Error deleting Activity with id=${id}.');
+      logger.error('Error deleting Activity with id=${id}.');
     }
   }
 
@@ -118,9 +119,9 @@ export default class ActivityController {
     try {
       const num = await activityRepository.deleteAll();
 
-      console.log(`${num} Activitys were deleted successfully!`);
+      logger.info(`${num} Activitys were deleted successfully!`);
     } catch (err) {
-      console.log('Some error occurred while removing all activities');
+      logger.info('Some error occurred while removing all activities');
     }
   }
 }
