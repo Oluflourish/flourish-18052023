@@ -1,4 +1,3 @@
-import { Request, Response } from "express";
 import Activity from "../models/activity.model";
 import activityRepository from "../repositories/activity.repository";
 import axios from "axios";
@@ -53,23 +52,14 @@ export default class ActivityController {
     }
   }
 
-  async create(req: Request, res: Response) {
-    if (!req.body.title) {
-      res.status(400).send({
-        message: "Content can not be empty!"
-      });
-      return;
-    }
+  async create(activity: Activity) {
 
     try {
-      const activity: Activity = req.body;
       const savedActivity = await activityRepository.save(activity);
 
-      res.status(201).send(savedActivity);
+      console.log('Activity created successfully');
     } catch (err) {
-      res.status(500).send({
-        message: "Some error occurred while retrieving activities."
-      });
+      console.error('Error creating activity', err);
     }
   }
 
@@ -83,66 +73,44 @@ export default class ActivityController {
     }
   }
 
-  async findOne(req: Request, res: Response) {
-    const id: number = parseInt(req.params.id);
-
+  async findOne(id: number) {
     try {
       const activity = await activityRepository.retrieveById(id);
 
-      if (activity) res.status(200).send(activity);
-      else
-        res.status(404).send({
-          message: `Cannot find Activity with id=${id}.`
-        });
+      if (activity) {
+        return activity;
+      } else {
+        console.log('Cannot find Activity with id=${id}.');
+      }
     } catch (err) {
-      res.status(500).send({
-        message: `Error retrieving Activity with id=${id}.`
-      });
+      console.log('Error retrieving Activity with id=${id}.');
     }
   }
 
-  async update(req: Request, res: Response) {
-    let activity: Activity = req.body;
-    activity.id = parseInt(req.params.id);
-
+  async update(activity: Activity) {
     try {
       const num = await activityRepository.update(activity);
 
       if (num == 1) {
-        res.send({
-          message: "Activity was updated successfully."
-        });
+        console.log('Activity updated successfully');
       } else {
-        res.send({
-          message: `Cannot update Activity with id=${activity.id}. Maybe Activity was not found or req.body is empty!`
-        });
+        console.log('Cannot update Activity with id=${activity.id}. Maybe Activity was not found or req.body is empty!');
       }
     } catch (err) {
-      res.status(500).send({
-        message: `Error updating Activity with id=${activity.id}.`
-      });
+      console.error('Error updating Activity with id=${activity.id}.');
     }
   }
 
-  async delete(req: Request, res: Response) {
-    const id: number = parseInt(req.params.id);
-
+  async delete(id: number) {
     try {
       const num = await activityRepository.delete(id);
-
       if (num == 1) {
-        res.send({
-          message: "Activity was deleted successfully!"
-        });
+        console.log('Activity was deleted successfully!');
       } else {
-        res.send({
-          message: `Cannot delete Activity with id=${id}. Maybe Activity was not found!`,
-        });
+        console.log('Cannot delete Activity with id=${id}. Maybe Activity was not found!');
       }
     } catch (err) {
-      res.status(500).send({
-        message: `Could not delete Activity with id==${id}.`
-      });
+      console.error('Error deleting Activity with id=${id}.');
     }
   }
 
@@ -150,23 +118,9 @@ export default class ActivityController {
     try {
       const num = await activityRepository.deleteAll();
 
-      res.send({ message: `${num} Activitys were deleted successfully!` });
+      console.log(`${num} Activitys were deleted successfully!`);
     } catch (err) {
-      res.status(500).send({
-        message: "Some error occurred while removing all activities."
-      });
-    }
-  }
-
-  async findAllPublished(req: Request, res: Response) {
-    try {
-      const activities = await activityRepository.retrieveAll({ published: true });
-
-      res.status(200).send(activities);
-    } catch (err) {
-      res.status(500).send({
-        message: "Some error occurred while retrieving activities."
-      });
+      console.log('Some error occurred while removing all activities');
     }
   }
 }
