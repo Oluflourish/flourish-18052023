@@ -19,15 +19,6 @@ export default class Server {
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
-    // TOOD:: Change to CRON job
-    // setInterval(() => {
-
-    //   const controller = new ActivityController();
-    //   controller.fetchEvents();
-
-    // }, 1000 * 300);
-
-
     // cron.schedule('*/30 * * * *', () => {                // Runs every 30 minutes
     cron.schedule('*/5 * * * * *', () => {                // Runs every 5 seconds
       console.log('Cron Job is running');
