@@ -2,6 +2,7 @@ import express, { Application } from "express";
 import cors, { CorsOptions } from "cors";
 import Database from "./db";
 import ActivityController from "./controllers/activity.controller";
+import cron from 'node-cron';
 
 export default class Server {
   constructor(app: Application) {
@@ -19,12 +20,21 @@ export default class Server {
     app.use(express.urlencoded({ extended: true }));
 
     // TOOD:: Change to CRON job
-    setInterval(() => {
+    // setInterval(() => {
+
+    //   const controller = new ActivityController();
+    //   controller.fetchEvents();
+
+    // }, 1000 * 300);
+
+
+    // cron.schedule('*/30 * * * *', () => {                // Runs every 30 minutes
+    cron.schedule('*/5 * * * * *', () => {                // Runs every 5 seconds
+      console.log('Cron Job is running');
 
       const controller = new ActivityController();
       controller.fetchEvents();
-
-    }, 1000 * 3);
+    });
   }
 
   private syncDatabase(): void {
