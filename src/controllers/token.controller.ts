@@ -1,4 +1,3 @@
-import { Request, Response } from "express";
 import Token from "../models/token.model";
 import tokenRepository from "../repositories/token.repository";
 import Activity from "../models/activity.model";
@@ -10,7 +9,6 @@ export default class TokenController {
     const activityRepository = new ActivityController();
 
     try {
-
       // Check if the activity with token_index exists in the tokens table  and if it doesn't, create it.
       let newTokens: Token[] = [];
 
@@ -73,133 +71,87 @@ export default class TokenController {
 
   async createBulkToken(tokens: Token[]) {
     try {
-      console.log('New number of tokens', tokens.length);
       const savedToken = await tokenRepository.saveBulk(tokens);
 
-      console.log('New tokens created!');
+      console.log('New tokens created:', tokens.length);
     } catch (err) {
       console.error('Error creating token', err);
     }
   }
 
-  async create(req: Request, res: Response) {
-    if (!req.body.title) {
-      res.status(400).send({
-        message: "Content can not be empty!"
-      });
-      return;
-    }
-
+  async create(token: Token) {
     try {
-      const token: Token = req.body;
       const savedToken = await tokenRepository.save(token);
 
-      res.status(201).send(savedToken);
+      console.log('Token created successfully');
     } catch (err) {
-      res.status(500).send({
-        message: "Some error occurred while retrieving tokens."
-      });
+      console.error('Error creating token', err);
     }
   }
 
-  async findAll(req: Request, res: Response) {
-    const title = typeof req.query.title === "string" ? req.query.title : "";
-
+  async findAll(condition: any) {
     try {
-      const tokens = await tokenRepository.retrieveAll({ title });
+      const tokens = await tokenRepository.retrieveAll(condition);
 
-      res.status(200).send(tokens);
+      return tokens;
     } catch (err) {
-      res.status(500).send({
-        message: "Some error occurred while retrieving tokens."
-      });
+      console.log('Error retrieving tokens', err);
     }
   }
 
-  async findOne(req: Request, res: Response) {
-    const id: number = parseInt(req.params.id);
+  async findOne(id: number) {
 
     try {
       const token = await tokenRepository.retrieveById(id);
 
-      if (token) res.status(200).send(token);
-      else
-        res.status(404).send({
-          message: `Cannot find Token with id=${id}.`
-        });
+      if (token) {
+        return token;
+      } else {
+        console.log(`Cannot find Token with id=${id}.`);
+      }
     } catch (err) {
-      res.status(500).send({
-        message: `Error retrieving Token with id=${id}.`
-      });
+      console.error(`Error retrieving Token with id=${id}.`);
     }
   }
 
-  async update(req: Request, res: Response) {
-    let token: Token = req.body;
-    token.id = parseInt(req.params.id);
+  async update(token: Token) {
 
     try {
       const num = await tokenRepository.update(token);
 
       if (num == 1) {
-        res.send({
-          message: "Token was updated successfully."
-        });
+        console.log('Token updated successfully');
+
       } else {
-        res.send({
-          message: `Cannot update Token with id=${token.id}. Maybe Token was not found or req.body is empty!`
-        });
+        console.log(`Cannot update Token with id=${token.id}. Maybe Token was not found or req.body is empty!`);
       }
     } catch (err) {
-      res.status(500).send({
-        message: `Error updating Token with id=${token.id}.`
-      });
+      console.error(`Error updating Token with id=${token.id}.`);
     }
   }
 
-  async delete(req: Request, res: Response) {
-    const id: number = parseInt(req.params.id);
+  async delete(id: number) {
 
     try {
       const num = await tokenRepository.delete(id);
 
       if (num == 1) {
-        res.send({
-          message: "Token was deleted successfully!"
-        });
+        console.log('Token deleted successfully');
       } else {
-        res.send({
-          message: `Cannot delete Token with id=${id}. Maybe Token was not found!`,
-        });
+        console.log(`Cannot delete Token with id=${id}. Maybe Token was not found!`);
       }
     } catch (err) {
-      res.status(500).send({
-        message: `Could not delete Token with id==${id}.`
-      });
+      console.error(`Error deleting Token with id=${id}.`);
     }
   }
 
-  async deleteAll(req: Request, res: Response) {
+  async deleteAll() {
     try {
       const num = await tokenRepository.deleteAll();
 
-      res.send({ message: `${num} Tokens were deleted successfully!` });
+      console.log(`${num} Tokens were deleted successfully!`);
     } catch (err) {
-      res.status(500).send({
-        message: "Some error occurred while removing all tokens."
-      });
-    }
-  }
-
-  async findAllPublished(req: Request, res: Response) {
-    try {
-      const tokens = await tokenRepository.retrieveAll({ published: true });
-
-      res.status(200).send(tokens);
-    } catch (err) {
-      res.status(500).send({
-        message: "Some error occurred while retrieving tokens."
-      });
+      console.error('Error deleting Tokens');
     }
   }
 }

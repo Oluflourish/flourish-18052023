@@ -114,7 +114,7 @@ export default class ActivityController {
     }
   }
 
-  async deleteAll(req: Request, res: Response) {
+  async deleteAll() {
     try {
       const num = await activityRepository.deleteAll();
 
