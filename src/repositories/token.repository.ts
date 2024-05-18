@@ -46,8 +46,7 @@ class TokenRepository implements ITokenRepository {
 
       if (searchParams?.published) condition.published = true;
 
-      if (searchParams?.title)
-        condition.title = { [Op.like]: `%${searchParams.title}%` };
+      if (searchParams?.title) condition.title = { [Op.like]: `%${searchParams.title}%` };
 
       return await Token.findAll({ where: condition });
     } catch (error) {
@@ -60,6 +59,14 @@ class TokenRepository implements ITokenRepository {
       return await Token.findByPk(tokenId);
     } catch (error) {
       throw new Error("Failed to retrieve Tokens!");
+    }
+  }
+
+  async retrieveOne(condition: any): Promise<Token | null> {
+    try {
+      return await Token.findOne({ where: condition });
+    } catch (error) {
+      throw new Error("Failed to retrieve Tokens");
     }
   }
 

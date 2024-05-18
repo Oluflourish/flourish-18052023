@@ -26,7 +26,7 @@ export default class Activity extends Model {
   contract_address?: string;
 
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.STRING(255),
     field: "token_index"
   })
   token_index?: number;
@@ -44,22 +44,17 @@ export default class Activity extends Model {
   maker?: string;
 
   @Column({
-    type: DataType.DECIMAL,
+    type: DataType.INTEGER,
     field: "listing_from"
   })
   listing_from?: number;
 
+
   @Column({
-    type: DataType.DECIMAL,
+    type: DataType.INTEGER,
     field: "listing_to"
   })
   listing_to?: number;
-
-  // @Column({
-  //   type: DataType.DECIMAL,
-  //   field: "event_timestamp"
-  // })
-  // event_timestamp?: number;
 
   @Column({
     type: DataType.DATE,

@@ -12,7 +12,7 @@ export default class Token extends Model {
   id?: number;
 
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.STRING(255),
     field: "token_index"
   })
   index?: number;

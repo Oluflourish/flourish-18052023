@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Activity from "../models/activity.model";
 import activityRepository from "../repositories/activity.repository";
 import axios from "axios";
+import TokenController from "./token.controller";
 
 export default class ActivityController {
 
@@ -40,6 +41,12 @@ export default class ActivityController {
       // console.log('number of activities', activities.length);
       const savedActivities = await activityRepository.saveBulk(activities);
 
+      // TODO:: Discentralize (un-tie) by emitting as an event
+      // Pass savedActivites to token controller
+
+      const tokenController = new TokenController();
+      tokenController.extractTokens(savedActivities);
+
       console.log('New activity created!');
     } catch (err) {
       console.error('Error creating activity', err);
@@ -66,17 +73,13 @@ export default class ActivityController {
     }
   }
 
-  async findAll(req: Request, res: Response) {
-    const title = typeof req.query.title === "string" ? req.query.title : "";
-
+  async findAll(condition: any) {
     try {
-      const activities = await activityRepository.retrieveAll({ title });
+      const activities = await activityRepository.retrieveAll(condition);
 
-      res.status(200).send(activities);
+      return activities;
     } catch (err) {
-      res.status(500).send({
-        message: "Some error occurred while retrieving activities."
-      });
+      console.error(err);
     }
   }
 

@@ -3,7 +3,7 @@ import Activity from "../models/activity.model";
 
 interface IActivityRepository {
   save(activity: Activity): Promise<Activity>;
-  retrieveAll(searchParams: { title: string, published: boolean }): Promise<Activity[]>;
+  retrieveAll(condition: SearchCondition): Promise<Activity[]>;
   retrieveById(activityId: number): Promise<Activity | null>;
   update(activity: Activity): Promise<number>;
   delete(activityId: number): Promise<number>;
@@ -49,15 +49,8 @@ class ActivityRepository implements IActivityRepository {
     }
   }
 
-  async retrieveAll(searchParams: { title?: string, published?: boolean }): Promise<Activity[]> {
+  async retrieveAll(condition: SearchCondition = {}): Promise<Activity[]> {
     try {
-      let condition: SearchCondition = {};
-
-      if (searchParams?.published) condition.published = true;
-
-      if (searchParams?.title)
-        condition.title = { [Op.like]: `%${searchParams.title}%` };
-
       return await Activity.findAll({ where: condition });
     } catch (error) {
       throw new Error("Failed to retrieve Activities!");
@@ -71,6 +64,8 @@ class ActivityRepository implements IActivityRepository {
       throw new Error("Failed to retrieve Activities!");
     }
   }
+
+
 
   async update(activity: Activity): Promise<number> {
     const { id, contract_address, token_index, listing_price, maker, listing_from, listing_to, event_timestamp } = activity;
